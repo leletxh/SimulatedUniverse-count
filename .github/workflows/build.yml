@@ -1,0 +1,67 @@
+name: Build SimulatedUniverse-count DLL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Create build directory
+      run: |
+        mkdir build
+        cd build
+
+    - name: Configure CMake
+      working-directory: ./build
+      run: cmake ..
+
+    - name: Build project
+      working-directory: ./build
+      run: cmake --build .
+
+    - name: Remove old DLL if exists
+      run: |
+        if exist dll\SimulatedUniverse-count.dll (
+          del dll\SimulatedUniverse-count.dll
+        )
+
+    - name: Copy new DLL to dll folder
+      run: |
+        mkdir -p dll
+        copy .\build\src\SimulatedUniverse-count.dll .\dll\
+
+    - name: Add and commit changes
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add dll/SimulatedUniverse-count.dll
+        git commit -m "Update SimulatedUniverse-count.dll"
+        git push origin main
+
+    - name: Upload DLL as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: SimulatedUniverse-count.dll
+        path: ./dll/SimulatedUniverse-count.dll
+
+    - name: Use Action Token in a script (example usage)
+      env:
+        ACTION_TOKEN: ${{ secrets.ACTION_TOKEN }}
+      run: |
+        echo "Using Action Token in a script..."
+        # Example: Pass the token to a script or command that requires it
+        # my_script.bat "$ACTION_TOKEN"
